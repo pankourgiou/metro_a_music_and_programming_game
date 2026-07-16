@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<title>ΜΕΤΡΟ ΚΩΔΙΚΑΣ — Ολόκληρο Δίκτυο</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d10;
+    --panel:#10151a;
+    --line-soft: rgba(255,255,255,0.08);
+    --text:#dbe6ea;
+    --dim:#7c8a92;
+    --green:#33a06f;
+    --red:#e5484d;
+    --blue:#2f8fe0;
+    --orange:#e08a2f;
+    --tram6:#1fb6a8;
+    --tram7:#c74fb0;
+    --gold:#d9b25a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(ellipse at 50% -10%, #131a20 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:'JetBrains Mono', monospace;
+    min-height:100vh;
+    padding:28px 24px 60px;
+  }
+
+  .topbar{
+    max-width:1320px;
+    margin:0 auto 24px;
+    text-align:center;
+  }
+  .eyebrow{
+    font-family:'Cinzel',serif;
+    letter-spacing:.4em;
+    font-size:11px;
+    color:var(--gold);
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Cinzel',serif;
+    font-weight:900;
+    letter-spacing:.08em;
+    font-size:clamp(26px,4.5vw,42px);
+    margin:0 0 8px;
+  }
+  .topbar p{color:var(--dim); font-size:14px; max-width:680px; margin:0 auto;}
+
+  .legend{
+    max-width:1320px;
+    margin:16px auto 0;
+    display:flex;
+    justify-content:center;
+    gap:22px;
+    flex-wrap:wrap;
+    font-size:11.5px;
+    color:var(--dim);
+  }
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .legend i{width:16px; height:4px; border-radius:2px; display:inline-block;}
+
+  .layout{
+    max-width:1320px;
+    margin:20px auto 0;
+    display:grid;
+    grid-template-columns:1.15fr 0.85fr;
+    gap:20px;
+  }
+  @media (max-width:920px){ .layout{grid-template-columns:1fr;} }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line-soft);
+    border-radius:10px;
+    padding:18px;
+  }
+  .panel-title{
+    font-family:'Cinzel',serif;
+    font-size:12px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .panel-title::after{content:"";flex:1;height:1px;background:var(--line-soft);}
+
+  /* ---- Map ---- */
+  .map-wrap{position:relative;}
+  svg{width:100%; height:auto; display:block;}
+  .station-dot{fill:var(--bg); stroke-width:3; cursor:default;}
+  .station-dot.interchange{fill:#fff;}
+  .station-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px;
+    fill:var(--dim);
+  }
+  .station-label.active{fill:var(--text); font-weight:700;}
+  .line-path{fill:none; stroke-width:5; stroke-linecap:round; stroke-linejoin:round;}
+  .train{transition: cx .35s ease, cy .35s ease;}
+
+  .ref-thumb{
+    position:absolute;
+    top:8px; right:8px;
+    width:74px;
+    opacity:.5;
+    border:1px solid var(--line-soft);
+    border-radius:4px;
+  }
+  .ref-caption{
+    position:absolute;
+    top:84px; right:8px;
+    font-size:9px;
+    color:var(--dim);
+    width:74px;
+    text-align:right;
+    line-height:1.3;
+  }
+
+  .console{
+    margin-top:14px;
+    background:#070a0c;
+    border:1px solid var(--line-soft);
+    border-radius:6px;
+    padding:12px 14px;
+    height:130px;
+    overflow-y:auto;
+    font-size:12.5px;
+    line-height:1.75;
+  }
+  .console .row{color:var(--dim);}
+  .console .row b{color:var(--text);}
+  .console .ok{color:var(--green);}
+  .console .bad{color:var(--red);}
+  .console .chime{color:var(--gold);}
+
+  /* ---- Right column ---- */
+  .levels{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;}
+  .level-btn{
+    flex:1 1 30%;
+    min-width:70px;
+    background:transparent;
+    border:1px solid var(--line-soft);
+    color:var(--dim);
+    padding:9px 6px;
+    border-radius:6px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    cursor:pointer;
+    text-align:center;
+    transition:.2s;
+  }
+  .level-btn.active{border-color:var(--gold); color:var(--gold); background:rgba(217,178,90,.06);}
+  .level-btn.done::after{content:" ★";}
+
+  .free-btn{
+    flex:1 1 100%;
+    margin-top:2px;
+    background:transparent;
+    border:1px dashed var(--blue);
+    color:var(--blue);
+    padding:9px 6px;
+    border-radius:6px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    cursor:pointer;
+    text-align:center;
+    transition:.2s;
+  }
+  .free-btn.active{border-style:solid; background:rgba(47,143,224,.1); color:#7ec1ff;}
+
+  body.free-mode .station-dot{cursor:pointer;}
+  body.free-mode .station-dot:hover{stroke-width:5;}
+
+  .hint-box{
+    font-size:13px;
+    color:var(--dim);
+    line-height:1.6;
+    background:rgba(255,255,255,.03);
+    border-left:2px solid var(--gold);
+    padding:10px 12px;
+    margin-bottom:14px;
+  }
+  .hint-box b{color:var(--text);}
+
+  textarea{
+    width:100%;
+    min-height:150px;
+    background:#070a0c;
+    border:1px solid var(--line-soft);
+    border-radius:6px;
+    color:var(--gold);
+    font-family:'JetBrains Mono', monospace;
+    font-size:14px;
+    padding:12px;
+    resize:vertical;
+    outline:none;
+    line-height:1.6;
+  }
+  textarea:focus{border-color:var(--gold);}
+
+  .btn-row{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;}
+  button.run, button.reset, button.example, button.replay{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:.05em;
+    padding:10px 16px;
+    border-radius:6px;
+    cursor:pointer;
+    border:1px solid var(--line-soft);
+    background:transparent;
+    color:var(--text);
+  }
+  button.run{background:var(--gold); color:#181205; border-color:var(--gold); font-weight:700;}
+  button.run:hover{filter:brightness(1.08);}
+  button.reset:hover, button.example:hover, button.replay:hover{border-color:var(--text);}
+  button.replay{color:var(--gold); border-color:var(--gold); opacity:.4; pointer-events:none;}
+  button.replay.enabled{opacity:1; pointer-events:auto;}
+
+  .cheatsheet{
+    margin-top:16px;
+    font-size:11.5px;
+    color:var(--dim);
+    line-height:1.9;
+  }
+  .cheatsheet code{color:var(--gold);}
+
+  .score-box{
+    margin-top:16px;
+    padding:14px;
+    border:1px solid var(--line-soft);
+    border-radius:6px;
+    text-align:center;
+  }
+  .stars{font-size:26px; letter-spacing:6px; margin-bottom:4px;}
+  .stars .off{color:#2a2f33;}
+  .stars .on{color:var(--gold); text-shadow:0 0 10px rgba(217,178,90,.5);}
+  .score-msg{font-size:12.5px; color:var(--dim);}
+
+  .total-box{
+    margin-top:10px;
+    font-size:11.5px;
+    color:var(--dim);
+    text-align:center;
+  }
+  .total-box b{color:var(--gold);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="eyebrow">Πρωτότυπο · 7 Επίπεδα · 6 Γραμμές</div>
+  <h1>ΜΕΤΡΟ ΚΩΔΙΚΑΣ</h1>
+  <p>Γράψε κώδικα για να οδηγήσεις το τρένο σε όλο το δίκτυο της Αθήνας — μετρό, ηλεκτρικό, προαστιακό και τραμ. Κάθε στάση παίζει μια νότα, κάθε αλλαγή γραμμής παίζει μια συγχορδία. Σωστός κώδικας, σωστή μελωδία.</p>
+  <div class="legend">
+    <span><i style="background:var(--green)"></i>Γραμμή 1 · Πράσινη</span>
+    <span><i style="background:var(--red)"></i>Γραμμή 2 · Κόκκινη</span>
+    <span><i style="background:var(--blue)"></i>Γραμμή 3 · Μπλε</span>
+    <span><i style="background:var(--orange)"></i>Προαστιακός · Πορτοκαλί</span>
+    <span><i style="background:var(--tram6)"></i>Τραμ Τ6 · Σύνταγμα-Πικροδάφνη</span>
+    <span><i style="background:var(--tram7)"></i>Τραμ Τ7 · Πειραιάς-Βούλα</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <div class="panel map-wrap">
+    <div class="panel-title">Χάρτης · Δίκτυο Αθήνας</div>
+    <img class="ref-thumb" src="data:image/png;base64,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" alt="πηγή έμπνευσης">
+    <div class="ref-caption">έμπνευση: μελλοντικός χάρτης μετρό Αθήνας</div>
+
+    <svg viewBox="0 0 1090 950" id="mapSvg">
+      <path id="lineTram7" class="line-path" d="" stroke="#c74fb0"></path>
+      <path id="lineTram6" class="line-path" d="" stroke="#1fb6a8"></path>
+      <path id="lineOrange" class="line-path" d="" stroke="#e08a2f"></path>
+      <path id="lineRed" class="line-path" d="" stroke="#e5484d"></path>
+      <path id="lineBlue" class="line-path" d="" stroke="#2f8fe0"></path>
+      <path id="lineGreen" class="line-path" d="" stroke="#33a06f"></path>
+      <g id="stationsTram7"></g>
+      <g id="stationsTram6"></g>
+      <g id="stationsOrange"></g>
+      <g id="stationsRed"></g>
+      <g id="stationsBlue"></g>
+      <g id="stationsGreen"></g>
+      <circle id="train" class="train" r="9" fill="#33a06f" stroke="#0a0d10" stroke-width="2"></circle>
+    </svg>
+
+    <div class="console" id="console">
+      <div class="row">Έτοιμο. Πάτησε <b>ΕΚΤΕΛΕΣΗ</b> για να ξεκινήσει το τρένο.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Πρόγραμμα</div>
+
+    <div class="levels" id="levels"></div>
+    <div class="hint-box" id="hint"></div>
+
+    <textarea id="code" spellcheck="false"></textarea>
+
+    <div class="btn-row">
+      <button class="run" id="runBtn">▶ ΕΚΤΕΛΕΣΗ</button>
+      <button class="reset" id="resetBtn">↺ ΕΠΑΝΑΦΟΡΑ</button>
+      <button class="example" id="exampleBtn">παράδειγμα</button>
+      <button class="replay" id="replayBtn">🎵 μελωδία</button>
+    </div>
+
+    <div class="cheatsheet">
+      <div><code>ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()</code> — προχώρα έναν σταθμό μπροστά</div>
+      <div><code>ΚΙΝΗΣΟΥ_ΠΙΣΩ()</code> — προχώρα έναν σταθμό πίσω</div>
+      <div><code>ΠΗΓΑΙΝΕ("Σταθμός")</code> — πήγαινε απευθείας σε σταθμό της ίδιας γραμμής</div>
+      <div><code>ΕΠΑΝΕΛΑΒΕ ν { ... }</code> — επανάλαβε τις εντολές ν φορές</div>
+      <div><code>ΑΛΛΑΓΗ_ΓΡΑΜΜΗΣ("γραμμή")</code> — άλλαξε γραμμή σε σταθμό ανταπόκρισης ("πράσινη", "κόκκινη", "μπλε", "πορτοκαλί", "τραμ6", "τραμ7")</div>
+    </div>
+
+    <div class="score-box" id="scoreBox">
+      <div class="stars" id="stars">☆ ☆ ☆</div>
+      <div class="score-msg" id="scoreMsg">Δεν έχεις παίξει ακόμα αυτό το επίπεδο.</div>
+    </div>
+    <div class="total-box" id="totalBox">Σύνολο αστεριών: <b>0</b> / 18</div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------- Data ---------------- */
+const LINES = {
+  green: {
+    color:"#33a06f",
+    timbre:"sine",
+    stations: [
+      {name:"Πειραιάς", x:140, y:820},
+      {name:"Φάληρο", x:175, y:760},
+      {name:"Μοσχάτο", x:205, y:700, interchange:["tram7"]},
+      {name:"Καλλιθέα", x:230, y:650, interchange:["tram7"]},
+      {name:"Ταύρος", x:260, y:600},
+      {name:"Πετράλωνα", x:300, y:550},
+      {name:"Θησείο", x:340, y:500},
+      {name:"Μοναστηράκι", x:380, y:450, interchange:["blue"]},
+      {name:"Ομόνοια", x:420, y:390, interchange:["red"]},
+      {name:"Βικτώρια", x:445, y:330},
+      {name:"Αττική", x:455, y:270, interchange:["red"]},
+      {name:"Άγιος Νικόλαος", x:465, y:220},
+      {name:"Κάτω Πατήσια", x:469, y:209},
+      {name:"Άγιος Ελευθέριος", x:472, y:198},
+      {name:"Άνω Πατήσια", x:476, y:186},
+      {name:"Περισσός", x:480, y:175},
+      {name:"Πευκάκια", x:490, y:152},
+      {name:"Νέα Ιωνία", x:500, y:130},
+      {name:"Ηράκλειο", x:510, y:112},
+      {name:"Ειρήνη", x:520, y:95},
+      {name:"Νερατζιώτισσα", x:545, y:65, interchange:["orange"]},
+      {name:"Μαρούσι", x:570, y:40},
+      {name:"ΚΑΤ", x:585, y:28},
+      {name:"Κηφισιά", x:600, y:15}
+    ],
+    scale:[261.63,293.67,329.63,392.00,440.01,523.26,587.34,659.27,784.00,880.01,1046.52,1174.68,1318.53,1568.01,1760.03]
+  },
+  red: {
+    color:"#e5484d",
+    timbre:"triangle",
+    stations: [
+      {name:"Ανθούπολη", x:300, y:20},
+      {name:"Περιστέρι", x:280, y:90},
+      {name:"Άγιος Αντώνιος", x:270, y:160},
+      {name:"Σεπόλια", x:300, y:230},
+      {name:"Αττική", x:455, y:270, interchange:["green"]},
+      {name:"Μεταξουργείο", x:430, y:330},
+      {name:"Ομόνοια", x:420, y:390, interchange:["green"]},
+      {name:"Πανεπιστήμιο", x:440, y:425},
+      {name:"Σύνταγμα", x:460, y:460, interchange:["blue", "tram6"]},
+      {name:"Ακρόπολη", x:470, y:510},
+      {name:"Συγγρού-Φιξ", x:475, y:560, interchange:["tram6"]},
+      {name:"Νέος Κόσμος", x:480, y:610, interchange:["tram6"]},
+      {name:"Άγιος Ιωάννης", x:485, y:635},
+      {name:"Δάφνη", x:490, y:660},
+      {name:"Άγιος Δημήτριος", x:500, y:710},
+      {name:"Ηλιούπολη", x:510, y:760},
+      {name:"Αλίμου", x:515, y:785},
+      {name:"Αργυρούπολη", x:520, y:810},
+      {name:"Ελληνικό", x:530, y:860, interchange:["tram7"]}
+    ],
+    scale:[196.00,220.00,246.94,293.67,329.63,392.00,440.01,493.89,587.34,659.26,784.00,880.01,987.78,1174.67,1318.53]
+  },
+  blue: {
+    color:"#2f8fe0",
+    timbre:"sawtooth",
+    stations: [
+      {name:"Αγία Βαρβάρα", x:80, y:480},
+      {name:"Κορυδαλλός", x:150, y:470},
+      {name:"Αγία Μαρίνα", x:220, y:460},
+      {name:"Ελαιώνας", x:300, y:455},
+      {name:"Κεραμεικός", x:340, y:452},
+      {name:"Μοναστηράκι", x:380, y:450, interchange:["green"]},
+      {name:"Σύνταγμα", x:460, y:460, interchange:["red", "tram6"]},
+      {name:"Ευαγγελισμός", x:520, y:455},
+      {name:"Μέγαρο Μουσικής", x:540, y:448},
+      {name:"Αμπελόκηποι", x:560, y:440},
+      {name:"Πανόρμου", x:580, y:425},
+      {name:"Κατεχάκη", x:600, y:410},
+      {name:"Εθνική Άμυνα", x:630, y:380},
+      {name:"Χολαργός", x:650, y:350},
+      {name:"Νομισματοκοπείο", x:650, y:338},
+      {name:"Αγία Παρασκευή", x:650, y:325},
+      {name:"Χαλάνδρι", x:650, y:312},
+      {name:"Δουκίσσης Πλακεντίας", x:650, y:300, interchange:["orange"]},
+      {name:"Αεροδρόμιο", x:760, y:600}
+    ],
+    scale:[164.81,184.99,207.65,246.94,277.18,329.62,369.99,415.30,493.87,554.35,659.24,739.97,830.59,987.74,1108.71]
+  },
+  orange: {
+    color:"#e08a2f",
+    timbre:"square",
+    stations: [
+      {name:"Ασπρόπυργος", x:60, y:150},
+      {name:"Άνω Λιόσια", x:150, y:120},
+      {name:"Αχαρναί", x:280, y:100},
+      {name:"ΣΚΑ", x:420, y:80},
+      {name:"Νερατζιώτισσα", x:545, y:65, interchange:["green"]},
+      {name:"Δουκίσσης Πλακεντίας", x:650, y:300, interchange:["blue"]},
+      {name:"Παιανία-Κάντζα", x:720, y:380},
+      {name:"Λαύριο", x:800, y:480}
+    ],
+    scale:[130.81,146.83,164.81,195.99,220.00,261.62,293.66,329.62]
+  },
+  tram6: {
+    color:"#1fb6a8",
+    timbre:"sine",
+    stations: [
+      {name:"Σύνταγμα", x:460, y:460, interchange:["red", "blue"]},
+      {name:"Ζάππειο", x:458, y:491},
+      {name:"Λ. Βουλιαγμένης", x:457, y:522},
+      {name:"Συγγρού-Φιξ", x:455, y:553, interchange:["red"]},
+      {name:"Κασομούλη", x:464, y:582},
+      {name:"Νέος Κόσμος", x:474, y:611, interchange:["red"]},
+      {name:"Μπακνανά", x:459, y:638},
+      {name:"Αιγαίου", x:444, y:665},
+      {name:"Αγία Φωτεινή", x:428, y:692},
+      {name:"Μεγάλου Αλεξάνδρου", x:405, y:712},
+      {name:"Αγία Παρασκευή (Ν.Σμύρνη)", x:382, y:733},
+      {name:"Μηδείας-Μυκάλης", x:359, y:753},
+      {name:"Ευαγγελική Σχολή", x:335, y:774},
+      {name:"Αχιλλέως", x:311, y:793},
+      {name:"Αμφιθέας", x:286, y:812},
+      {name:"Παναγίτσα", x:262, y:831},
+      {name:"Μουσών", x:240, y:852},
+      {name:"Έδεμ", x:220, y:876, interchange:["tram7"]},
+      {name:"Πικροδάφνη", x:200, y:900, interchange:["tram7"]}
+    ],
+    scale:[220.00,246.94,277.18,329.63,369.99,440.00,493.88,554.37,659.26,739.99,880.00,987.77,1108.73,1318.51,1479.98]
+  },
+  tram7: {
+    color:"#c74fb0",
+    timbre:"triangle",
+    stations: [
+      {name:"Ακτή Ποσειδώνος", x:55, y:860},
+      {name:"Δημαρχείο", x:78, y:857},
+      {name:"Πλ. Δεληγιάννη", x:102, y:853},
+      {name:"Ευαγγελίστρια", x:125, y:850},
+      {name:"Λαμπράκη", x:148, y:847},
+      {name:"Μ. Ασίας", x:171, y:846},
+      {name:"Γήπεδο Καραϊσκάκη", x:195, y:847},
+      {name:"Αγία Τριάδα", x:218, y:848},
+      {name:"Πλατεία Ιπποδαμείας", x:242, y:849},
+      {name:"34ου Συντάγματος", x:265, y:852},
+      {name:"Ανδρούτσου", x:287, y:860},
+      {name:"Σκυλίτση", x:309, y:868},
+      {name:"Σ.Ε.Φ.", x:331, y:877},
+      {name:"Νέο Φάληρο", x:353, y:884},
+      {name:"Μοσχάτο", x:376, y:890, interchange:["green"]},
+      {name:"Καλλιθέα", x:399, y:896, interchange:["green"]},
+      {name:"Τζιτζιφιές", x:421, y:903},
+      {name:"Δέλτα Φαλήρου", x:445, y:906},
+      {name:"Αγία Σκέπη", x:468, y:909},
+      {name:"Τροκαντερό", x:491, y:911},
+      {name:"Πάρκο Φλοίσβου", x:515, y:913},
+      {name:"Φλοίσβος", x:538, y:916},
+      {name:"Μπάτης", x:562, y:918},
+      {name:"Έδεμ", x:585, y:917, interchange:["tram6"]},
+      {name:"Πικροδάφνη", x:609, y:916, interchange:["tram6"]},
+      {name:"Μαρίνα Αλίμου", x:632, y:915},
+      {name:"Καλαμάκι", x:655, y:914},
+      {name:"Ζέφυρος", x:679, y:913},
+      {name:"Λουτρά Αλίμου", x:702, y:912},
+      {name:"Ελληνικό", x:726, y:910, interchange:["red"]},
+      {name:"1η Αγίου Κοσμά", x:749, y:908},
+      {name:"2η Αγίου Κοσμά", x:773, y:907},
+      {name:"Άγιος Αλέξανδρος", x:796, y:905},
+      {name:"Ελλήνων Ολυμπιονικών", x:820, y:903},
+      {name:"Κέντρο Ιστιοπλοΐας", x:843, y:901},
+      {name:"Πλατεία Βεργώτη", x:867, y:899},
+      {name:"Παραλία Γλυφάδας", x:890, y:896},
+      {name:"Παλαιό Δημαρχείο", x:913, y:894},
+      {name:"Πλατεία Κατράκη", x:937, y:891},
+      {name:"Αγγέλου Μεταξά", x:960, y:888},
+      {name:"Πλατεία Εσπερίδων", x:983, y:885},
+      {name:"Κολυμβητήριο", x:1007, y:883},
+      {name:"Ασκληπιείο Βούλας", x:1030, y:880}
+    ],
+    scale:[146.83,164.81,184.99,220.00,246.94,293.66,329.62,369.99,439.99,493.88,587.32,659.24,739.98,879.99,987.75]
+  }
+};
+const LINE_NAMES = {"πράσινη":"green","κόκκινη":"red","μπλε":"blue","πορτοκαλί":"orange","τραμ6":"tram6","τραμ7":"tram7"};
+
+const LEVELS = [
+  {
+    id:1, lineKey:"green", startIdx:0, targetIdx:3, targetLineKey:"green",
+    title:"1 · Ακολουθία",
+    hint:'Ο στόχος είναι η <b>Καλλιθέα</b>, 3 σταθμούς μπροστά στην πράσινη γραμμή (Πειραιάς → Φάληρο → Μοσχάτο → Καλλιθέα). Χρησιμοποίησε <code>ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()</code> τρεις φορές, ή απευθείας <code>ΠΗΓΑΙΝΕ("Καλλιθέα")</code>.',
+    requireLoop:false, bonusLines:3, bonusChars:70,
+    example:'ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()\nΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()\nΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()'
+  },
+  {
+    id:2, lineKey:"green", startIdx:0, targetIdx:23, targetLineKey:"green",
+    title:"2 · Βρόχος",
+    hint:'Ο στόχος είναι η <b>Κηφισιά</b>, 23 σταθμούς μπροστά — όλη η πράσινη γραμμή (τώρα με όλους τους σταθμούς, από Κάτω Πατήσια μέχρι ΚΑΤ)! Δεν θέλεις να γράψεις <code>ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()</code> εικοσιτρείς φορές· χρησιμοποίησε <code>ΕΠΑΝΕΛΑΒΕ 23 { ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ() }</code> για bonus αστέρι.',
+    requireLoop:true, bonusChars:48,
+    example:'ΕΠΑΝΕΛΑΒΕ 23 {\n  ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()\n}'
+  },
+  {
+    id:3, lineKey:"green", startIdx:23, targetIdx:8, targetLineKey:"green",
+    title:"3 · Προς τα πίσω",
+    hint:'Ξεκινάς από την <b>Κηφισιά</b>. Ο στόχος είναι η <b>Ομόνοια</b>, δεκαπέντε σταθμούς πίσω. Χρησιμοποίησε <code>ΚΙΝΗΣΟΥ_ΠΙΣΩ()</code> δεκαπέντε φορές, ή απευθείας <code>ΠΗΓΑΙΝΕ("Ομόνοια")</code> για το bonus αστέρι.',
+    requireLoop:false, bonusLines:1, bonusChars:35,
+    example:'ΠΗΓΑΙΝΕ("Ομόνοια")'
+  },
+  {
+    id:4, lineKey:"red", startIdx:0, targetIdx:8, targetLineKey:"red",
+    title:"4 · Κόκκινη γραμμή",
+    hint:'Τώρα οδηγείς στην <b>κόκκινη γραμμή</b>, από την Ανθούπολη. Ο στόχος είναι το <b>Σύνταγμα</b>, 8 σταθμούς μπροστά (μέσω Περιστερίου, Σεπολίων, Αττικής, Ομόνοιας). Δοκίμασε βρόχο για bonus αστέρι.',
+    requireLoop:false, bonusLines:3, bonusChars:70,
+    example:'ΕΠΑΝΕΛΑΒΕ 8 {\n  ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()\n}'
+  },
+  {
+    id:5, lineKey:"green", startIdx:0, targetIdx:6, targetLineKey:"blue",
+    title:"5 · Αλλαγή γραμμής",
+    hint:'Ξεκινάς στην <b>πράσινη</b> από τον Πειραιά. Φτάσε στο <b>Μοναστηράκι</b> (7 σταθμούς μπροστά), κάνε <code>ΑΛΛΑΓΗ_ΓΡΑΜΜΗΣ("μπλε")</code>, μετά προχώρα 1 σταθμό στην μπλε γραμμή μέχρι το <b>Σύνταγμα</b>.',
+    requireLoop:false, bonusLines:6, bonusChars:120,
+    example:'ΕΠΑΝΕΛΑΒΕ 7 {\n  ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()\n}\nΑΛΛΑΓΗ_ΓΡΑΜΜΗΣ("μπλε")\nΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()'
+  },
+  {
+    id:6, lineKey:"red", startIdx:0, targetIdx:18, targetLineKey:"blue",
+    title:"6 · Μεγάλη περιήγηση",
+    hint:'Η μεγάλη πρόκληση: ξεκίνα από την <b>Ανθούπολη</b> (κόκκινη) και φτάσε στο <b>Αεροδρόμιο</b> (μπλε), περνώντας από την πράσινη και την πορτοκαλί γραμμή. Χρειάζεσαι 3 αλλαγές γραμμής στους σταθμούς ανταπόκρισης: <b>Αττική</b>, <b>Νερατζιώτισσα</b>, <b>Δουκίσσης Πλακεντίας</b>.',
+    requireLoop:false, bonusLines:10, bonusChars:220,
+    example:'ΕΠΑΝΕΛΑΒΕ 4 {\n  ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()\n}\nΑΛΛΑΓΗ_ΓΡΑΜΜΗΣ("πράσινη")\nΕΠΑΝΕΛΑΒΕ 10 {\n  ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()\n}\nΑΛΛΑΓΗ_ΓΡΑΜΜΗΣ("πορτοκαλί")\nΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()\nΑΛΛΑΓΗ_ΓΡΑΜΜΗΣ("μπλε")\nΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()'
+  },
+  {
+    id:7, lineKey:"red", startIdx:11, targetIdx:29, targetLineKey:"tram7",
+    title:"7 · Το τραμ της παραλίας",
+    hint:'Νέο δίκτυο ξεκλειδώθηκε: το <b>Τραμ</b>! Ξεκινάς στον σταθμό <b>Νέος Κόσμος</b> (κόκκινη). Κάνε <code>ΑΛΛΑΓΗ_ΓΡΑΜΜΗΣ("τραμ6")</code> — υπάρχει ανταπόκριση εκεί — και ταξίδεψε 13 σταθμούς μέχρι το <b>Πικροδάφνη</b>. Εκεί άλλαξε στο <code>"τραμ7"</code> και προχώρα 5 ακόμα σταθμούς παραλιακά μέχρι το <b>Ελληνικό</b>.',
+    requireLoop:true, bonusChars:120,
+    example:'ΑΛΛΑΓΗ_ΓΡΑΜΜΗΣ("τραμ6")\nΕΠΑΝΕΛΑΒΕ 13 {\n  ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()\n}\nΑΛΛΑΓΗ_ΓΡΑΜΜΗΣ("τραμ7")\nΕΠΑΝΕΛΑΒΕ 5 {\n  ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ()\n}'
+  }
+];
+
+let currentLevel = LEVELS[0];
+let currentIndex = 0;
+let activeLine = "green";
+let audioCtx = null;
+let lastMelody = [];
+let completedLevels = {};
+let freeMode = false;
+
+/* ---------------- Audio ---------------- */
+function ensureAudio(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+function playNote(freq, timbre, duration){
+  ensureAudio();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = timbre;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration + 0.02);
+}
+function playChime(freqA, freqB){
+  ensureAudio();
+  playNote(freqA, "triangle", 0.5);
+  setTimeout(()=> playNote(freqB, "triangle", 0.5), 90);
+}
+
+/* ---------------- Map rendering ---------------- */
+function pathFor(stations){
+  return stations.map((s,i)=> (i===0?"M":"L") + s.x + " " + s.y).join(" ");
+}
+
+const ALL_LINE_KEYS = ["green","red","blue","orange","tram6","tram7"];
+function capKey(k){ return k.charAt(0).toUpperCase() + k.slice(1); }
+
+function renderMap(){
+  ALL_LINE_KEYS.forEach(key=>{
+    document.getElementById('line' + capKey(key)).setAttribute('d', pathFor(LINES[key].stations));
+  });
+
+  ALL_LINE_KEYS.forEach(key=>{
+    const container = document.getElementById('stations' + capKey(key));
+    container.innerHTML = "";
+    const line = LINES[key];
+    line.stations.forEach(s=>{
+      const isInterchange = !!(s.interchange && s.interchange.length);
+      const dot = document.createElementNS("http://www.w3.org/2000/svg","circle");
+      dot.setAttribute("cx", s.x); dot.setAttribute("cy", s.y);
+      dot.setAttribute("r", isInterchange ? 9 : 6);
+      dot.setAttribute("class", "station-dot" + (isInterchange ? " interchange" : ""));
+      dot.setAttribute("stroke", line.color);
+      dot.addEventListener('click', ()=> travelTo(key, s.name));
+      container.appendChild(dot);
+
+      const label = document.createElementNS("http://www.w3.org/2000/svg","text");
+      const nearRightEdge = s.x > 500;
+      label.setAttribute("x", nearRightEdge ? s.x - 11 : s.x + 11);
+      label.setAttribute("y", s.y + 4);
+      if(nearRightEdge) label.setAttribute("text-anchor", "end");
+      label.setAttribute("class", "station-label");
+      label.setAttribute("data-name", s.name);
+      label.setAttribute("data-line", key);
+      label.textContent = s.name;
+      label.style.cursor = "pointer";
+      label.addEventListener('click', ()=> travelTo(key, s.name));
+      container.appendChild(label);
+    });
+  });
+
+  placeTrain();
+}
+
+function placeTrain(){
+  const line = LINES[activeLine];
+  const s = line.stations[currentIndex];
+  const train = document.getElementById('train');
+  train.setAttribute('cx', s.x);
+  train.setAttribute('cy', s.y);
+  train.setAttribute('fill', line.color);
+
+  document.querySelectorAll('.station-label').forEach(l=>{
+    l.classList.toggle('active', l.dataset.line===activeLine && l.dataset.name===s.name);
+  });
+}
+
+function travelTo(lineKey, stationName){
+  if(!freeMode) return;
+  const line = LINES[lineKey];
+  const idx = line.stations.findIndex(s=>s.name === stationName);
+  if(idx === -1) return;
+  activeLine = lineKey;
+  currentIndex = idx;
+  placeTrain();
+  const freq = line.scale[idx % line.scale.length];
+  playNote(freq, line.timbre, 0.5);
+  lastMelody.push({freq, timbre:line.timbre, duration:0.5});
+  document.getElementById('replayBtn').classList.add('enabled');
+  logRow("🎵 <b>" + line.stations[idx].name + "</b> (" + lineLabel(lineKey) + ")");
+}
+
+/* ---------------- Console ---------------- */
+function logRow(html, cls){
+  const c = document.getElementById('console');
+  const row = document.createElement('div');
+  row.className = "row" + (cls ? " " + cls : "");
+  row.innerHTML = html;
+  c.appendChild(row);
+  c.scrollTop = c.scrollHeight;
+}
+function clearConsole(){ document.getElementById('console').innerHTML = ""; }
+
+/* ---------------- Parser ---------------- */
+function parseStatements(code){
+  const statements = [];
+  let i = 0;
+  const reSkip = /[\s;]+/y;
+  const reRepeat = /ΕΠΑΝΕΛΑΒΕ\s+(\d+)\s*\{/y;
+  const reForward = /ΚΙΝΗΣΟΥ_ΕΜΠΡΟΣ\s*\(\s*\)/y;
+  const reBackward = /ΚΙΝΗΣΟΥ_ΠΙΣΩ\s*\(\s*\)/y;
+  const reGoto = /ΠΗΓΑΙΝΕ\s*\(\s*"([^"]+)"\s*\)/y;
+  const reSwitch = /ΑΛΛΑΓΗ_ΓΡΑΜΜΗΣ\s*\(\s*"([^"]+)"\s*\)/y;
+
+  while(i < code.length){
+    reSkip.lastIndex = i;
+    const skip = reSkip.exec(code);
+    if(skip && skip.index === i){ i = reSkip.lastIndex; continue; }
+
+    if(i >= code.length) break;
+
+    reRepeat.lastIndex = i;
+    let m = reRepeat.exec(code);
+    if(m && m.index === i){
+      const count = parseInt(m[1], 10);
+      let depth = 1;
+      let j = reRepeat.lastIndex;
+      const bodyStart = j;
+      while(j < code.length && depth > 0){
+        if(code[j] === "{") depth++;
+        else if(code[j] === "}") depth--;
+        if(depth === 0) break;
+        j++;
+      }
+      if(depth !== 0) throw new Error("Λείπει κλείσιμο } στο ΕΠΑΝΕΛΑΒΕ.");
+      const inner = code.slice(bodyStart, j);
+      statements.push({type:"repeat", count, body: parseStatements(inner)});
+      i = j + 1;
+      continue;
+    }
+
+    reForward.lastIndex = i;
+    m = reForward.exec(code);
+    if(m && m.index === i){ statements.push({type:"forward"}); i = reForward.lastIndex; continue; }
+
+    reBackward.lastIndex = i;
+    m = reBackward.exec(code);
+    if(m && m.index === i){ statements.push({type:"backward"}); i = reBackward.lastIndex; continue; }
+
+    reSwitch.lastIndex = i;
+    m = reSwitch.exec(code);
+    if(m && m.index === i){ statements.push({type:"switch", name:m[1]}); i = reSwitch.lastIndex; continue; }
+
+    reGoto.lastIndex = i;
+    m = reGoto.exec(code);
+    if(m && m.index === i){ statements.push({type:"goto", name:m[1]}); i = reGoto.lastIndex; continue; }
+
+    throw new Error('Δεν αναγνωρίζω εντολή κοντά στο: "' + code.slice(i, i+18).trim() + '..."');
+  }
+  return statements;
+}
+
+function flatten(statements, out, usedLoop){
+  statements.forEach(st=>{
+    if(st.type === "repeat"){
+      usedLoop.value = true;
+      const count = Math.max(0, Math.min(30, st.count));
+      for(let k=0;k<count;k++) flatten(st.body, out, usedLoop);
+    } else {
+      out.push(st);
+    }
+  });
+}
+
+/* ---------------- Execution ---------------- */
+function run(){
+  clearConsole();
+  document.getElementById('replayBtn').classList.remove('enabled');
+  lastMelody = [];
+  const codeText = document.getElementById('code').value;
+  let statements;
+  try{
+    statements = parseStatements(codeText);
+  }catch(err){
+    logRow("✗ " + err.message, "bad");
+    return;
+  }
+
+  const usedLoop = {value:false};
+  const moves = [];
+  try{
+    flatten(statements, moves, usedLoop);
+  }catch(err){
+    logRow("✗ " + err.message, "bad");
+    return;
+  }
+
+  if(moves.length === 0){
+    logRow("Δεν υπάρχουν εντολές κίνησης για εκτέλεση.", "bad");
+    return;
+  }
+  if(moves.length > 60){
+    logRow("✗ Πάρα πολλές κινήσεις (μέγιστο 60). Μείωσε τον βρόχο σου.", "bad");
+    return;
+  }
+
+  if(!freeMode){
+    activeLine = currentLevel.lineKey;
+    currentIndex = currentLevel.startIdx;
+  }
+  placeTrain();
+  logRow("▶ Εκκίνηση από <b>" + LINES[activeLine].stations[currentIndex].name + "</b> (" + lineLabel(activeLine) + ")");
+
+  let step = 0;
+
+  function doStep(){
+    if(step >= moves.length){
+      if(freeMode){
+        logRow('<span class="ok">🎵 Μελωδία ολοκληρώθηκε — πάτησε "μελωδία" για επανάληψη.</span>');
+        document.getElementById('replayBtn').classList.add('enabled');
+      } else {
+        finish(usedLoop.value, codeText);
+      }
+      return;
+    }
+    const mv = moves[step];
+    const line = LINES[activeLine];
+    let ok = true;
+
+    if(mv.type === "forward"){
+      if(currentIndex < line.stations.length - 1){
+        currentIndex++;
+      } else {
+        logRow("✗ Το τρένο είναι ήδη στο τέρμα της γραμμής.", "bad");
+        ok = false;
+      }
+    } else if(mv.type === "backward"){
+      if(currentIndex > 0){
+        currentIndex--;
+      } else {
+        logRow("✗ Το τρένο είναι ήδη στην αρχή της γραμμής.", "bad");
+        ok = false;
+      }
+    } else if(mv.type === "goto"){
+      const idx = line.stations.findIndex(s=>s.name === mv.name);
+      if(idx === -1){
+        logRow('✗ Ο σταθμός "' + mv.name + '" δεν υπάρχει σε αυτή τη γραμμή.', "bad");
+        ok = false;
+      } else {
+        currentIndex = idx;
+      }
+    } else if(mv.type === "switch"){
+      const targetKey = LINE_NAMES[mv.name.trim().toLowerCase()];
+      const st = line.stations[currentIndex];
+      if(!targetKey){
+        logRow('✗ Άγνωστη γραμμή "' + mv.name + '". Δοκίμασε: "πράσινη", "κόκκινη", "μπλε", "πορτοκαλί", "τραμ6", "τραμ7".', "bad");
+        ok = false;
+      } else if(targetKey === activeLine){
+        logRow('✗ Είσαι ήδη στην ' + lineLabel(targetKey) + ' γραμμή.', "bad");
+        ok = false;
+      } else if(!freeMode && (!st.interchange || !st.interchange.includes(targetKey))){
+        logRow('✗ Ο σταθμός "' + st.name + '" δεν έχει ανταπόκριση με την ' + lineLabel(targetKey) + ' γραμμή.', "bad");
+        ok = false;
+      } else {
+        const newLine = LINES[targetKey];
+        const matchIdx = newLine.stations.findIndex(s=>s.name === st.name);
+        const newIdx = matchIdx === -1 ? 0 : matchIdx;
+        const freqA = line.scale[currentIndex % line.scale.length];
+        const freqB = newLine.scale[newIdx % newLine.scale.length];
+        playChime(freqA, freqB);
+        lastMelody.push({freq:freqA, timbre:line.timbre, duration:0.35});
+        lastMelody.push({freq:freqB, timbre:newLine.timbre, duration:0.35});
+        activeLine = targetKey;
+        currentIndex = newIdx;
+        logRow('⇄ Αλλαγή στη <b>' + lineLabel(targetKey) + '</b> γραμμή στο <b>' + st.name + '</b> ♪♪', "chime");
+      }
+    }
+
+    if(ok && mv.type !== "switch"){
+      placeTrain();
+      const s = line.stations[currentIndex];
+      const freq = line.scale[currentIndex % line.scale.length];
+      playNote(freq, line.timbre, 0.45);
+      lastMelody.push({freq, timbre:line.timbre, duration:0.45});
+      logRow("→ <b>" + s.name + "</b> ♪");
+    } else if(ok){
+      placeTrain();
+    }
+
+    step++;
+    setTimeout(doStep, 420);
+  }
+  doStep();
+}
+
+function lineLabel(key){
+  return {green:"πράσινη", red:"κόκκινη", blue:"μπλε", orange:"πορτοκαλί", tram6:"τραμ6", tram7:"τραμ7"}[key] || key;
+}
+
+function finish(usedLoop, codeText){
+  const line = LINES[activeLine];
+  const reached = line.stations[currentIndex].name;
+  const targetKey = currentLevel.targetLineKey || currentLevel.lineKey;
+  const targetName = LINES[targetKey].stations[currentLevel.targetIdx].name;
+  const success = activeLine === targetKey && currentIndex === currentLevel.targetIdx;
+
+  const lineCount = codeText.trim().split("\n").filter(l=>l.trim().length>0).length;
+
+  let starCount = 0;
+  if(success) starCount = 1;
+  if(success && currentLevel.requireLoop && usedLoop) starCount = 2;
+  if(success && !currentLevel.requireLoop && lineCount <= (currentLevel.bonusLines||2)) starCount = 2;
+  if(success && starCount >= 2 && codeText.length <= (currentLevel.bonusChars||70)) starCount = 3;
+
+  if(success){
+    logRow('<span class="ok">✓ Έφτασες στον στόχο: ' + targetName + ' (' + lineLabel(targetKey) + ')</span>');
+    document.getElementById('replayBtn').classList.add('enabled');
+    if(!completedLevels[currentLevel.id] || completedLevels[currentLevel.id] < starCount){
+      completedLevels[currentLevel.id] = starCount;
+      const btn = document.querySelector('.level-btn[data-id="'+currentLevel.id+'"]');
+      if(btn) btn.classList.add('done');
+    }
+  } else {
+    logRow('<span class="bad">✗ Δεν έφτασες στον στόχο. Βρίσκεσαι στο: ' + reached + " (στόχος: " + targetName + ")</span>");
+  }
+  renderStars(starCount, success);
+  updateTotal();
+}
+
+function renderStars(count, success){
+  const starsEl = document.getElementById('stars');
+  let html = "";
+  for(let i=0;i<3;i++){
+    html += '<span class="' + (i < count ? "on" : "off") + '">' + (i < count ? "★" : "☆") + "</span> ";
+  }
+  starsEl.innerHTML = html;
+  const msg = document.getElementById('scoreMsg');
+  if(!success){
+    msg.textContent = "Δοκίμασε ξανά — δες το hint αν κολλήσεις.";
+  } else if(count === 3){
+    msg.textContent = "Τέλεια εκτέλεση — σύντομος κώδικας, σωστός στόχος.";
+  } else if(count === 2){
+    msg.textContent = "Πολύ καλά! Δοκίμασε πιο σύντομο κώδικα για το τρίτο αστέρι.";
+  } else {
+    msg.textContent = currentLevel.requireLoop
+      ? "Έφτασες στον στόχο — δοκίμασε ΕΠΑΝΕΛΑΒΕ για δεύτερο αστέρι."
+      : "Έφτασες στον στόχο — δοκίμασε λιγότερες γραμμές κώδικα για δεύτερο αστέρι.";
+  }
+}
+
+function updateTotal(){
+  let total = 0;
+  Object.values(completedLevels).forEach(v=> total += v);
+  document.getElementById('totalBox').innerHTML = 'Σύνολο αστεριών: <b>' + total + '</b> / ' + (LEVELS.length*3);
+}
+
+function replayMelody(){
+  if(!lastMelody.length) return;
+  ensureAudio();
+  let t = 0;
+  lastMelody.forEach(n=>{
+    setTimeout(()=> playNote(n.freq, n.timbre, n.duration), t);
+    t += 260;
+  });
+}
+
+/* ---------------- Level switching ---------------- */
+function loadLevel(level){
+  freeMode = false;
+  document.body.classList.remove('free-mode');
+  document.getElementById('scoreBox').style.display = "";
+  currentLevel = level;
+  activeLine = level.lineKey;
+  currentIndex = level.startIdx;
+  document.getElementById('hint').innerHTML = level.hint;
+  document.getElementById('code').value = "";
+  clearConsole();
+  lastMelody = [];
+  document.getElementById('replayBtn').classList.remove('enabled');
+  const storedStars = completedLevels[level.id] || 0;
+  renderStars(storedStars, storedStars > 0);
+  document.getElementById('scoreMsg').textContent = storedStars ? "Ήδη ολοκληρωμένο — δοκίμασε ξανά για καλύτερη βαθμολογία." : "Δεν έχεις παίξει ακόμα αυτό το επίπεδο.";
+  document.querySelectorAll('.level-btn').forEach(b=>{
+    b.classList.toggle('active', parseInt(b.dataset.id,10) === level.id);
+  });
+  document.getElementById('freeBtn').classList.remove('active');
+  renderMap();
+  logRow("Επίπεδο φορτώθηκε. Ξεκίνα από <b>" + LINES[level.lineKey].stations[level.startIdx].name + "</b> (" + lineLabel(level.lineKey) + ").");
+}
+
+function enterFreeMode(){
+  freeMode = true;
+  document.body.classList.add('free-mode');
+  activeLine = "green";
+  currentIndex = 0;
+  document.getElementById('hint').innerHTML = 'Ελεύθερη λειτουργία 🎹 Κάνε κλικ σε <b>οποιονδήποτε σταθμό</b> του χάρτη για να ταξιδέψεις εκεί ακαριαία και να ακούσεις τη νότα του — δουλεύει σε όλες τις γραμμές, χωρίς περιορισμούς ανταπόκρισης. Μπορείς επίσης να γράψεις κώδικα (ακόμα και <code>ΑΛΛΑΓΗ_ΓΡΑΜΜΗΣ</code> από οπουδήποτε) και να πατήσεις ΕΚΤΕΛΕΣΗ. Δεν υπάρχει στόχος, μόνο μουσική.';
+  document.getElementById('code').value = "";
+  clearConsole();
+  lastMelody = [];
+  document.getElementById('replayBtn').classList.remove('enabled');
+  document.getElementById('scoreBox').style.display = "none";
+  document.querySelectorAll('.level-btn').forEach(b=> b.classList.remove('active'));
+  document.getElementById('freeBtn').classList.add('active');
+  renderMap();
+  logRow("🎹 Ελεύθερη λειτουργία. Κάνε κλικ σε έναν σταθμό για να ξεκινήσεις.");
+}
+
+function buildLevelButtons(){
+  const wrap = document.getElementById('levels');
+  wrap.innerHTML = "";
+  LEVELS.forEach(l=>{
+    const btn = document.createElement('button');
+    btn.className = "level-btn";
+    btn.dataset.id = l.id;
+    btn.textContent = l.title;
+    btn.addEventListener('click', ()=> loadLevel(l));
+    wrap.appendChild(btn);
+  });
+  const freeBtn = document.createElement('button');
+  freeBtn.className = "free-btn";
+  freeBtn.id = "freeBtn";
+  freeBtn.textContent = "🎹 Ελεύθερη λειτουργία — παίξε μουσική χωρίς στόχο";
+  freeBtn.addEventListener('click', enterFreeMode);
+  wrap.appendChild(freeBtn);
+}
+
+/* ---------------- Wire up ---------------- */
+document.getElementById('runBtn').addEventListener('click', run);
+document.getElementById('resetBtn').addEventListener('click', ()=> loadLevel(currentLevel));
+document.getElementById('exampleBtn').addEventListener('click', ()=>{
+  document.getElementById('code').value = currentLevel.example;
+});
+document.getElementById('replayBtn').addEventListener('click', replayMelody);
+
+buildLevelButtons();
+renderMap();
+loadLevel(LEVELS[0]);
+</script>
+
+</body>
+</html>
